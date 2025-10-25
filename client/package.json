@@ -1,5 +1,5 @@
 {
-  "name": "client",
+  "name": "sentinalone-firewall-rule-manager",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -8,7 +8,7 @@
     "start": "electron ."
   },
   "keywords": [],
-  "author": "",
+  "author": "Yoosup Song",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
