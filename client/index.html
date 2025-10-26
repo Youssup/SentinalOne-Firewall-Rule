@@ -1,21 +1,52 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'"
-    />
-    <meta
-      http-equiv="X-Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'"
-    />
-    <title>Hello from Electron renderer!</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SentinalOne Firewall Rule Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                DEFAULT: "#F98105",
+                aitorange: "#F98105",
+              },
+              "light-bg": "#F4F4F3",
+              "light-card": "#FFFFFF",
+              "light-text": "#1F2937",
+            },
+          },
+        },
+      };
+    </script>
   </head>
-  <body>
-    <h1>Hello from Electron renderer!</h1>
-    <p>👋</p>
-    <p id="info"></p>
+  <body
+    class="bg-light-bg text-light-text h-screen w-screen flex items-center justify-center p-4"
+  >
+    <div
+      class="w-full max-w-lg mx-auto bg-light-card rounded-2xl shadow-2xl p-8"
+    >
+      <!-- Header -->
+      <div class="text-center">
+        <h1 class="text-3xl font-bold text-primary-aitorange">
+          SentinalOne Firewall Rule Manager
+        </h1>
+      </div>
+
+      <div class="mt-6">
+        <label for="ip-input" class="text-lg font-semibold mb-2 block"
+          >IPs & CIDR Ranges</label
+        >
+        <!-- ips / cidr ranges -->
+        <textarea
+          id="ip-input"
+          placeholder="e.g., 192.168.1.1, 1062.224.0.0/16"
+          class="w-full h-32 bg-white border border-gray-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+        ></textarea>
+      </div>
+    </div>
   </body>
-  <script src="./renderer.js"></script>
 </html>
