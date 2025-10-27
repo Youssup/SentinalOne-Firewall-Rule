@@ -1,0 +1,20 @@
+/* Import font and set the font family */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+body {
+    font-family: "Inter", sans-serif;
+}
+
+/* Custom scrollbar for webkit browsers */
+textarea::-webkit-scrollbar {
+    width: 8px;
+}
+
+textarea::-webkit-scrollbar-track {
+    background: #f4f4f3;
+}
+
+textarea::-webkit-scrollbar-thumb {
+    background-color: #d1d5db;
+    border-radius: 20px;
+    border: 2px solid #f4f4f3;
+}
