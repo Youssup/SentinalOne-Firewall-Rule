@@ -48,8 +48,78 @@ function showStatus(message, isError = false) {
   }, 3000);
 }
 
+/**
+ * Handles adding IPs from the input to the JSON.
+ */
+function handleAddIps() {
+  // Get the IPs from the input, split by new lines, and trim whitespace, filter out empty lines
+  const ipsToAdd = ipInput.value
+    .split("\n")
+    .map((ip) => ip.trim())
+    .filter((ip) => ip.length > 0);
+
+  // If there are no IPs to add, show an error and end the function
+  if (ipsToAdd.length === 0) {
+    showStatus("Input is empty.", true);
+    return;
+  }
+
+  try {
+    const currentRules = JSON.parse(jsonOutput.value);
+
+    // CurrentRules should have data.remoteHosts for inputting ips if it doesnt, show an error and end the function
+    if (!currentRules.data?.remote_hosts) {
+      showStatus("Invalid JSON. Missing data.remote_hosts", true);
+      return;
+    }
+
+    // Find the object with type "addresses"
+    let targetHostObject = currentRules.data.remote_hosts.find(
+      (h) => h.type === "addresses"
+    );
+
+    // If no "addresses" object exists, create one
+    if (!targetHostObject) {
+      targetHostObject = { type: "addresses", values: [] };
+      currentRules.data.remote_hosts.push(targetHostObject);
+    }
+
+    // Make sure its 'values' property is an array
+    if (!Array.isArray(targetHostObject.values)) {
+      targetHostObject.values = [];
+    }
+
+    // Add new IPs NO duplicates
+    const existingIps = new Set(targetHostObject.values);
+    let addedCount = 0;
+    ipsToAdd.forEach((ip) => {
+      // Only add if it does not already exist
+      if (!existingIps.has(ip)) {
+        existingIps.add(ip);
+        addedCount++;
+      }
+    });
+
+    // Sort the IPs
+    targetHostObject.values = Array.from(existingIps).sort();
+    // Update the JSON output area
+    jsonOutput.value = JSON.stringify(currentRules, null, 2);
+    showStatus(
+      `Added ${addedCount} new entr${addedCount === 1 ? "y" : "ies"}. Total: ${
+        targetHostObject.values.length
+      }.`
+    );
+  } catch (error) {
+    showStatus("Invalid JSON in the output area.", true);
+    console.error("JSON parsing error:", error);
+  }
+}
+
 // Initialize the JSON output to the default rule template on page load
 document.addEventListener("DOMContentLoaded", initialize);
+
+// Add IPs to JSON output
+addIpButton.addEventListener("click", handleAddIps);
 
 // Clear the IP input field
 clearIpButton.addEventListener("click", () => {
