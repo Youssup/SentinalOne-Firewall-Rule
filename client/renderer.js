@@ -24,6 +24,16 @@ const defaultRuleTemplate = {
   filter: {},
 };
 
+/**
+ * Sets the JSON output area to the default rule template
+ */
+function initialize() {
+  jsonOutput.value = JSON.stringify(defaultRuleTemplate, null, 2);
+}
+
+// Initialize the JSON output to the default rule template on page load
+document.addEventListener("DOMContentLoaded", initialize);
+
 // Clear the IP input field
 clearIpButton.addEventListener("click", () => {
   ipInput.value = "";
