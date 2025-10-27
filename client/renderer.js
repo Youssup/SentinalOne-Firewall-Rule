@@ -31,6 +31,23 @@ function initialize() {
   jsonOutput.value = JSON.stringify(defaultRuleTemplate, null, 2);
 }
 
+/**
+ * Displays a status message for 3 seconds because Electron doesn't show logs
+ * @param {string} message - The message to display
+ * @param {boolean} [isError=false] - Whether the message is an error defaulted to false
+ */
+function showStatus(message, isError = false) {
+  statusMessage.textContent = message;
+  // If the message is an error, set text color to red, else green
+  statusMessage.className = isError
+    ? "h-6 text-center text-red-600 transition-opacity duration-300"
+    : "h-6 text-center text-green-600 transition-opacity duration-300";
+
+  setTimeout(() => {
+    statusMessage.textContent = "";
+  }, 3000);
+}
+
 // Initialize the JSON output to the default rule template on page load
 document.addEventListener("DOMContentLoaded", initialize);
 
