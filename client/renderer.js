@@ -23,3 +23,8 @@ const defaultRuleTemplate = {
   },
   filter: {},
 };
+
+// Clear the IP input field
+clearIpButton.addEventListener("click", () => {
+  ipInput.value = "";
+});
