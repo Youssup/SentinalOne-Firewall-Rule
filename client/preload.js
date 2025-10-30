@@ -1,7 +1,6 @@
-const { contextBridge } = require("electron/renderer");
+const { contextBridge, ipcRenderer } = require("electron");
 
-contextBridge.exposeInMainWorld("versions", {
-  node: () => process.versions.node,
-  chrome: () => process.versions.chrome,
-  electron: () => process.versions.electron,
+// Expose method to open file
+contextBridge.exposeInMainWorld("api", {
+  openFile: () => ipcRenderer.invoke("open-file"),
 });
