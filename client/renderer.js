@@ -7,8 +7,8 @@ const loadFileButton = document.getElementById("load-file-button");
 const downloadButton = document.getElementById("download-button");
 const statusMessage = document.getElementById("status-message");
 
-const defaultRuleTemplate = {
-  data: {
+const defaultRuleTemplate = [
+  {
     name: "Blocking Rule Example",
     action: "Block",
     direction: "inbound",
@@ -21,8 +21,7 @@ const defaultRuleTemplate = {
     application: [],
     service: null,
   },
-  filter: {},
-};
+];
 
 /**
  * Sets the JSON output area to the default rule template
@@ -65,23 +64,23 @@ function handleAddIps() {
   }
 
   try {
-    const currentRules = JSON.parse(jsonOutput.value);
+    const currentRules = JSON.parse(jsonOutput.value)[0];
 
-    // CurrentRules should have data.remoteHosts for inputting ips if it doesnt, show an error and end the function
-    if (!currentRules.data?.remote_hosts) {
-      showStatus("Invalid JSON. Missing data.remote_hosts", true);
+    // CurrentRules should have remoteHosts for inputting ips if it doesnt, show an error and end the function
+    if (!currentRules.remote_hosts) {
+      showStatus("Invalid JSON. Missing remote_hosts", true);
       return;
     }
 
     // Find the object with type "addresses"
-    let targetHostObject = currentRules.data.remote_hosts.find(
+    let targetHostObject = currentRules.remote_hosts.find(
       (h) => h.type === "addresses"
     );
 
     // If no "addresses" object exists, create one
     if (!targetHostObject) {
       targetHostObject = { type: "addresses", values: [] };
-      currentRules.data.remote_hosts.push(targetHostObject);
+      currentRules.remote_hosts.push(targetHostObject);
     }
 
     // Make sure its 'values' property is an array
@@ -115,11 +114,37 @@ function handleAddIps() {
   }
 }
 
+/**
+ * Handles loading a JSON file.
+ */
+async function handleLoadFile() {
+  // Call the "openFile" function from preload.js
+  const result = await window.api.openFile();
+
+  if (result.status === "success") {
+    try {
+      // Parse and set it as a JSON and load it into the JSON output
+      const parsed = JSON.parse(result.content);
+      jsonOutput.value = JSON.stringify(parsed, null, 2);
+      showStatus(`File loaded successfully!`);
+    } catch (error) {
+      showStatus(`Failed to parse file. Is it a valid JSON?`, true);
+    }
+  } else if (result.status === "error") {
+    showStatus(`Error opening file: ${result.message}`, true);
+  } else if (result.status === "cancelled") {
+    showStatus("Open cancelled.", true);
+  }
+}
+
 // Initialize the JSON output to the default rule template on page load
 document.addEventListener("DOMContentLoaded", initialize);
 
 // Add IPs to JSON output
 addIpButton.addEventListener("click", handleAddIps);
+
+// Load JSON from file
+loadFileButton.addEventListener("click", handleLoadFile);
 
 // Clear the IP input field
 clearIpButton.addEventListener("click", () => {
