@@ -64,53 +64,30 @@ function handleAddIps() {
   }
 
   try {
-    const currentRules = JSON.parse(jsonOutput.value)[0];
+    // parse the current JSON output
+    const currentRules = JSON.parse(jsonOutput.value);
 
-    // CurrentRules should have remoteHosts for inputting ips if it doesnt, show an error and end the function
-    if (!currentRules.remote_hosts) {
-      showStatus("Invalid JSON. Missing remote_hosts", true);
-      return;
-    }
-
-    // Find the object with type "addresses"
-    let targetHostObject = currentRules.remote_hosts.find(
-      (h) => h.type === "addresses"
-    );
-
-    // If no "addresses" object exists, create one
-    if (!targetHostObject) {
-      targetHostObject = { type: "addresses", values: [] };
-      currentRules.remote_hosts.push(targetHostObject);
-    }
-
-    // Make sure its 'values' property is an array
-    if (!Array.isArray(targetHostObject.values)) {
-      targetHostObject.values = [];
-    }
-
-    // Add new IPs NO duplicates
-    const existingIps = new Set(targetHostObject.values);
     let addedCount = 0;
-    ipsToAdd.forEach((ip) => {
-      // Only add if it does not already exist
-      if (!existingIps.has(ip)) {
-        existingIps.add(ip);
+    for (rule of currentRules) {
+      if (!rule.remote_hosts) {
+        showStatus("Invalid JSON. Missing remote_hosts", true);
+        return;
+      }
+      for (ip of ipsToAdd) {
+        rule.remote_hosts.push({ type: "addresses", values: [ip] });
         addedCount++;
       }
-    });
-
-    // Sort the IPs
-    targetHostObject.values = Array.from(existingIps).sort();
-    // Update the JSON output area
+    }
     jsonOutput.value = JSON.stringify(currentRules, null, 2);
+    addedCount /= currentRules.length;
     showStatus(
-      `Added ${addedCount} new entr${addedCount === 1 ? "y" : "ies"}. Total: ${
-        targetHostObject.values.length
-      }.`
+      `Added ${addedCount} entr${addedCount === 1 ? "y" : "ies"} to ${
+        currentRules.length === 1 ? "the" : "each"
+      } rule.`
     );
   } catch (error) {
-    showStatus("Invalid JSON in the output area.", true);
-    console.error("JSON parsing error:", error);
+    console.log("Failed to parse JSON output:", error);
+    showStatus(error, true);
   }
 }
 
