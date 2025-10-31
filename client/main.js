@@ -8,6 +8,7 @@ const createWindow = () => {
     height: 800,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
+      contextIsolation: true
     },
   });
 
@@ -30,7 +31,7 @@ app.on("window-all-closed", () => {
   }
 });
 
-// 
+//
 ipcMain.handle("open-file", async () => {
   // Open file window
   const { canceled, filePaths } = await dialog.showOpenDialog({
