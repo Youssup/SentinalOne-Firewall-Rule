@@ -51,11 +51,12 @@ function showStatus(message, isError = false) {
  * Handles adding IPs from the input to the JSON.
  */
 function handleAddIps() {
-  // Get the IPs from the input, split by new lines, and trim whitespace, filter out empty lines
+  // Get the IPs from the input, split by new lines, and trim whitespace, filter out empty lines and invalid IP addresses
   const ipsToAdd = ipInput.value
     .split("\n")
     .map((ip) => ip.trim())
-    .filter((ip) => ip.length > 0);
+    .filter((ip) => ip.length > 0)
+    .filter((ip) => ValidateIPaddress(ip));
 
   // If there are no IPs to add, show an error and end the function
   if (ipsToAdd.length === 0) {
@@ -112,6 +113,17 @@ async function handleLoadFile() {
   } else if (result.status === "cancelled") {
     showStatus("Open cancelled.", true);
   }
+}
+
+/**
+ * Validates an IP
+ * @param {string} ip - The message to display
+ * @returns {boolean} - Return true if valid, false if not
+ */
+function ValidateIPaddress(ip) {
+  return /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(
+    ip
+  );
 }
 
 // Initialize the JSON output to the default rule template on page load
