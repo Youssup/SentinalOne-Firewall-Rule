@@ -71,7 +71,8 @@ function handleAddEntries() {
     // parse the current JSON output
     const currentRules = JSON.parse(jsonOutput.value);
 
-    let addedCount = 0;
+    let CIDRaddedCount = 0;
+    let IPaddedCount = 0;
     for (rule of currentRules) {
       if (!rule.remote_hosts) {
         showStatus("Invalid JSON. Missing remote_hosts", true);
@@ -81,14 +82,15 @@ function handleAddEntries() {
         // If the entry is an IP address then add it as an address type
         if (ValidateIPaddress(entry)) {
           rule.remote_hosts.push({ type: "addresses", values: [entry] });
+          IPaddedCount++;
         } else {
           rule.remote_hosts.push({ type: "cidr", values: [entry] });
+          CIDRAddedCount++;
         }
-        addedCount++;
       }
     }
     jsonOutput.value = JSON.stringify(currentRules, null, 2);
-    addedCount /= currentRules.length;
+    let addedCount = (IPaddedCount + CIDRAddedCount)/currentRules.length;
     showStatus(
       `Added ${addedCount} entr${addedCount === 1 ? "y" : "ies"} to ${
         currentRules.length === 1 ? "the" : "each"
