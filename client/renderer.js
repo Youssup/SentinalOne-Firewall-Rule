@@ -1,5 +1,5 @@
 // Setting DOM Elements
-const ipInput = document.getElementById("ip-input");
+const entryInput = document.getElementById("entry-input");
 const jsonOutput = document.getElementById("json-output");
 const addIpButton = document.getElementById("add-ip-button");
 const clearIpButton = document.getElementById("clear-ip-button");
@@ -48,18 +48,18 @@ function showStatus(message, isError = false) {
 }
 
 /**
- * Handles adding IPs from the input to the JSON.
+ * Handles adding entries from the input to the JSON.
  */
-function handleAddIps() {
-  // Get the IPs from the input, split by new lines, and trim whitespace, filter out empty lines and invalid IP addresses
-  const ipsToAdd = ipInput.value
+function handleAddEntries() {
+  // Get the entries from the input, split by new lines, and trim whitespace, filter out empty lines and invalid entries
+  const entriesToAdd = entryInput.value
     .split("\n")
-    .map((ip) => ip.trim())
-    .filter((ip) => ip.length > 0)
-    .filter((ip) => ValidateIPaddress(ip));
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0)
+    .filter((entry) => ValidateIPaddress(entry) || ValidateCIDR(entry));
 
   // If there are no IPs to add, show an error and end the function
-  if (ipsToAdd.length === 0) {
+  if (entriesToAdd.length === 0) {
     showStatus("Input is empty.", true);
     return;
   }
@@ -74,8 +74,8 @@ function handleAddIps() {
         showStatus("Invalid JSON. Missing remote_hosts", true);
         return;
       }
-      for (ip of ipsToAdd) {
-        rule.remote_hosts.push({ type: "addresses", values: [ip] });
+      for (entry of entriesToAdd) {
+        rule.remote_hosts.push({ type: "addresses", values: [entry] });
         addedCount++;
       }
     }
@@ -117,7 +117,7 @@ async function handleLoadFile() {
 
 /**
  * Validates an IP
- * @param {string} ip - The message to display
+ * @param {string} ip - the IP address to validate
  * @returns {boolean} - Return true if valid, false if not
  */
 function ValidateIPaddress(ip) {
@@ -126,16 +126,27 @@ function ValidateIPaddress(ip) {
   );
 }
 
+/**
+ * Validates a CIDR range
+ * @param {string} cidr - The CIDR range to validate
+ * @returns {boolean} - Return true if valid, false if not
+ */
+function ValidateCIDR(cidr) {
+  return /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/(3[0-2]|[12]?[0-9])$/.test(
+    cidr
+  );
+}
+
 // Initialize the JSON output to the default rule template on page load
 document.addEventListener("DOMContentLoaded", initialize);
 
 // Add IPs to JSON output
-addIpButton.addEventListener("click", handleAddIps);
+addIpButton.addEventListener("click", handleAddEntries);
 
 // Load JSON from file
 loadFileButton.addEventListener("click", handleLoadFile);
 
 // Clear the IP input field
 clearIpButton.addEventListener("click", () => {
-  ipInput.value = "";
+  entryInput.value = "";
 });
