@@ -1,5 +1,5 @@
 // Setting DOM Elements
-const ipInput = document.getElementById("ip-input");
+const entryInput = document.getElementById("entry-input");
 const jsonOutput = document.getElementById("json-output");
 const addIpButton = document.getElementById("add-ip-button");
 const clearIpButton = document.getElementById("clear-ip-button");
@@ -15,7 +15,10 @@ const defaultRuleTemplate = [
     protocol: "UDP",
     status: "Enabled",
     os_types: ["osx", "linux", "windows"],
-    remote_hosts: [{ type: "addresses", values: ["191.168.1.1"] }],
+    remote_hosts: [
+      { type: "addresses", values: ["191.168.1.1"] },
+      { type: "cidr", values: ["187.204.0.0/21"] },
+    ],
     remote_port: [],
     local_port: [],
     application: [],
@@ -48,19 +51,23 @@ function showStatus(message, isError = false) {
 }
 
 /**
- * Handles adding IPs from the input to the JSON.
+ * Handles adding entries from the input to the JSON.
  */
-function handleAddIps() {
-  // Get the IPs from the input, split by new lines, and trim whitespace, filter out empty lines and invalid IP addresses
-  const ipsToAdd = ipInput.value
+function handleAddEntries() {
+  if (entryInput.value.trim() === "") {
+    showStatus("No entries to add.", true);
+    return;
+  }
+  // Get the entries from the input, split by new lines, and trim whitespace, filter out empty lines and invalid entries
+  const entriesToAdd = entryInput.value
     .split("\n")
-    .map((ip) => ip.trim())
-    .filter((ip) => ip.length > 0)
-    .filter((ip) => ValidateIPaddress(ip));
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0)
+    .filter((entry) => ValidateIPaddress(entry) || ValidateCIDR(entry));
 
   // If there are no IPs to add, show an error and end the function
-  if (ipsToAdd.length === 0) {
-    showStatus("Input is empty.", true);
+  if (entriesToAdd.length === 0) {
+    showStatus("No valid entries.", true);
     return;
   }
 
@@ -68,23 +75,46 @@ function handleAddIps() {
     // parse the current JSON output
     const currentRules = JSON.parse(jsonOutput.value);
 
-    let addedCount = 0;
+    let duplicates = "";
+    let CIDRaddedCount = 0;
+    let IPaddedCount = 0;
     for (rule of currentRules) {
       if (!rule.remote_hosts) {
         showStatus("Invalid JSON. Missing remote_hosts", true);
         return;
       }
-      for (ip of ipsToAdd) {
-        rule.remote_hosts.push({ type: "addresses", values: [ip] });
-        addedCount++;
+      const existingIps = new Set(
+        rule.remote_hosts.flatMap((entry) => entry.values)
+      );
+      console.log(existingIps);
+      for (entry of entriesToAdd) {
+        // Only add the entry if it doesn't already exist
+        if (!existingIps.has(entry)) {
+          // If the entry is an IP address then add it as an address type
+          if (ValidateIPaddress(entry)) {
+            rule.remote_hosts.push({ type: "addresses", values: [entry] });
+            IPaddedCount++;
+          }
+          // Otherwise assume it is a CIDR range and add it as a cidr type
+          else {
+            rule.remote_hosts.push({ type: "cidr", values: [entry] });
+            CIDRaddedCount++;
+          }
+        } else {
+          duplicates += `${entry} `;
+        }
       }
     }
     jsonOutput.value = JSON.stringify(currentRules, null, 2);
-    addedCount /= currentRules.length;
+    let addedCount = (IPaddedCount + CIDRaddedCount) / currentRules.length;
+    if (addedCount === 0) {
+      showStatus(`No new entries added. All entries are duplicates.`, true);
+      return;
+    }
     showStatus(
       `Added ${addedCount} entr${addedCount === 1 ? "y" : "ies"} to ${
         currentRules.length === 1 ? "the" : "each"
-      } rule.`
+      } rule. ${duplicates ? `Duplicates ignored: ${duplicates}` : ""}`
     );
   } catch (error) {
     console.log("Failed to parse JSON output:", error);
@@ -117,7 +147,7 @@ async function handleLoadFile() {
 
 /**
  * Validates an IP
- * @param {string} ip - The message to display
+ * @param {string} ip - the IP address to validate
  * @returns {boolean} - Return true if valid, false if not
  */
 function ValidateIPaddress(ip) {
@@ -126,16 +156,27 @@ function ValidateIPaddress(ip) {
   );
 }
 
+/**
+ * Validates a CIDR range
+ * @param {string} cidr - The CIDR range to validate
+ * @returns {boolean} - Return true if valid, false if not
+ */
+function ValidateCIDR(cidr) {
+  return /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/(3[0-2]|[12]?[0-9])$/.test(
+    cidr
+  );
+}
+
 // Initialize the JSON output to the default rule template on page load
 document.addEventListener("DOMContentLoaded", initialize);
 
 // Add IPs to JSON output
-addIpButton.addEventListener("click", handleAddIps);
+addIpButton.addEventListener("click", handleAddEntries);
 
 // Load JSON from file
 loadFileButton.addEventListener("click", handleLoadFile);
 
 // Clear the IP input field
 clearIpButton.addEventListener("click", () => {
-  ipInput.value = "";
+  entryInput.value = "";
 });
