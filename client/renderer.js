@@ -85,12 +85,12 @@ function handleAddEntries() {
           IPaddedCount++;
         } else {
           rule.remote_hosts.push({ type: "cidr", values: [entry] });
-          CIDRAddedCount++;
+          CIDRaddedCount++;
         }
       }
     }
     jsonOutput.value = JSON.stringify(currentRules, null, 2);
-    let addedCount = (IPaddedCount + CIDRAddedCount)/currentRules.length;
+    let addedCount = (IPaddedCount + CIDRaddedCount)/currentRules.length;
     showStatus(
       `Added ${addedCount} entr${addedCount === 1 ? "y" : "ies"} to ${
         currentRules.length === 1 ? "the" : "each"
