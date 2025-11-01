@@ -54,6 +54,10 @@ function showStatus(message, isError = false) {
  * Handles adding entries from the input to the JSON.
  */
 function handleAddEntries() {
+  if (entryInput.value.trim() === "") {
+    showStatus("No entries to add.", true);
+    return;
+  }
   // Get the entries from the input, split by new lines, and trim whitespace, filter out empty lines and invalid entries
   const entriesToAdd = entryInput.value
     .split("\n")
@@ -63,7 +67,7 @@ function handleAddEntries() {
 
   // If there are no IPs to add, show an error and end the function
   if (entriesToAdd.length === 0) {
-    showStatus("Input is empty.", true);
+    showStatus("No valid entries.", true);
     return;
   }
 
@@ -71,6 +75,7 @@ function handleAddEntries() {
     // parse the current JSON output
     const currentRules = JSON.parse(jsonOutput.value);
 
+    let duplicates = "";
     let CIDRaddedCount = 0;
     let IPaddedCount = 0;
     for (rule of currentRules) {
@@ -78,23 +83,38 @@ function handleAddEntries() {
         showStatus("Invalid JSON. Missing remote_hosts", true);
         return;
       }
+      const existingIps = new Set(
+        rule.remote_hosts.flatMap((entry) => entry.values)
+      );
+      console.log(existingIps);
       for (entry of entriesToAdd) {
-        // If the entry is an IP address then add it as an address type
-        if (ValidateIPaddress(entry)) {
-          rule.remote_hosts.push({ type: "addresses", values: [entry] });
-          IPaddedCount++;
+        // Only add the entry if it doesn't already exist
+        if (!existingIps.has(entry)) {
+          // If the entry is an IP address then add it as an address type
+          if (ValidateIPaddress(entry)) {
+            rule.remote_hosts.push({ type: "addresses", values: [entry] });
+            IPaddedCount++;
+          }
+          // Otherwise assume it is a CIDR range and add it as a cidr type
+          else {
+            rule.remote_hosts.push({ type: "cidr", values: [entry] });
+            CIDRaddedCount++;
+          }
         } else {
-          rule.remote_hosts.push({ type: "cidr", values: [entry] });
-          CIDRaddedCount++;
+          duplicates += `${entry} `;
         }
       }
     }
     jsonOutput.value = JSON.stringify(currentRules, null, 2);
-    let addedCount = (IPaddedCount + CIDRaddedCount)/currentRules.length;
+    let addedCount = (IPaddedCount + CIDRaddedCount) / currentRules.length;
+    if (addedCount === 0) {
+      showStatus(`No new entries added. All entries are duplicates.`, true);
+      return;
+    }
     showStatus(
       `Added ${addedCount} entr${addedCount === 1 ? "y" : "ies"} to ${
         currentRules.length === 1 ? "the" : "each"
-      } rule.`
+      } rule. ${duplicates ? `Duplicates ignored: ${duplicates}` : ""}`
     );
   } catch (error) {
     console.log("Failed to parse JSON output:", error);
