@@ -15,7 +15,10 @@ const defaultRuleTemplate = [
     protocol: "UDP",
     status: "Enabled",
     os_types: ["osx", "linux", "windows"],
-    remote_hosts: [{ type: "addresses", values: ["191.168.1.1"] }],
+    remote_hosts: [
+      { type: "addresses", values: ["191.168.1.1"] },
+      { type: "cidr", values: ["187.204.0.0/21"] },
+    ],
     remote_port: [],
     local_port: [],
     application: [],
@@ -75,7 +78,12 @@ function handleAddEntries() {
         return;
       }
       for (entry of entriesToAdd) {
-        rule.remote_hosts.push({ type: "addresses", values: [entry] });
+        // If the entry is an IP address then add it as an address type
+        if (ValidateIPaddress(entry)) {
+          rule.remote_hosts.push({ type: "addresses", values: [entry] });
+        } else {
+          rule.remote_hosts.push({ type: "cidr", values: [entry] });
+        }
         addedCount++;
       }
     }
