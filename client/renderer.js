@@ -16,8 +16,8 @@ const defaultRuleTemplate = [
     status: "Enabled",
     os_types: ["osx", "linux", "windows"],
     remote_hosts: [
-      { type: "addresses", values: ["191.168.1.1"] },
-      { type: "cidr", values: ["187.204.0.0/21"] },
+      { type: "addresses", values: ["192.168.1.1"] },
+      { type: "cidr", values: ["192.168.0.0/64"] },
     ],
     remote_port: [],
     local_port: [],

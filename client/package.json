@@ -2,12 +2,14 @@
   "name": "sentinalone-firewall-rule-manager",
   "version": "1.0.0",
   "description": "Application to manage SentinalOne's Firewall Rules JSON",
+  "repository": "https://github.com/Youssup/SentinalOne-Firewall-Rule",
   "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "electron-forge start",
     "package": "electron-forge package",
-    "make": "electron-forge make"
+    "make": "electron-forge make",
+    "publish": "dotenv electron-forge publish"
   },
   "keywords": [],
   "author": "Yoosup Song",
@@ -21,7 +23,9 @@
     "@electron-forge/maker-zip": "^7.10.2",
     "@electron-forge/plugin-auto-unpack-natives": "^7.10.2",
     "@electron-forge/plugin-fuses": "^7.10.2",
+    "@electron-forge/publisher-github": "^7.10.2",
     "@electron/fuses": "^1.8.0",
+    "dotenv-cli": "^11.0.0",
     "electron": "^38.3.0"
   },
   "dependencies": {

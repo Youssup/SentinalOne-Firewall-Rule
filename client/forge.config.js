@@ -1,7 +1,22 @@
 const { FusesPlugin } = require('@electron-forge/plugin-fuses');
 const { FuseV1Options, FuseVersion } = require('@electron/fuses');
+process.env.GITHUB_TOKEN
 
 module.exports = {
+  publishers: [
+    {
+      name: '@electron-forge/publisher-github',
+      config: {
+        repository: {
+          owner: 'youssup',
+          name: 'SentinalOne-Firewall-Rule'
+          
+        },
+        prerelease: true,
+        draft: true
+      }
+    }
+  ],
   packagerConfig: {
     asar: true,
   },
