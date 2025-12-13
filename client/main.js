@@ -8,7 +8,7 @@ const createWindow = () => {
     height: 800,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
-      contextIsolation: true
+      contextIsolation: true,
     },
   });
 
@@ -31,7 +31,7 @@ app.on("window-all-closed", () => {
   }
 });
 
-//
+// Open file handler
 ipcMain.handle("open-file", async () => {
   // Open file window
   const { canceled, filePaths } = await dialog.showOpenDialog({
@@ -40,7 +40,7 @@ ipcMain.handle("open-file", async () => {
     properties: ["openFile"],
   });
 
-  //If the file was closed or no file selected send cancelled status back to renderer.js
+  // If the file was closed or no file selected send cancelled status back to renderer.js
   if (canceled || filePaths.length === 0) {
     return { status: "cancelled" };
   }
@@ -51,6 +51,26 @@ ipcMain.handle("open-file", async () => {
     // Read the file and send it back to renderer.js
     const content = fs.readFileSync(filePath, "utf-8");
     return { status: "success", content: content, path: filePath };
+  } catch (err) {
+    return { status: "error", message: err.message };
+  }
+});
+
+// Save file handler
+ipcMain.handle("save-file", async (event, content) => {
+  const { canceled, filePath } = await dialog.showSaveDialog({
+    title: "Save Firewall Rules",
+    defaultPath: "sentinelone-rules.json",
+    filters: [{ name: "JSON Files", extensions: ["json"] }],
+  });
+
+  if (canceled || !filePath) {
+    return { status: "cancelled" };
+  }
+
+  try {
+    fs.writeFileSync(filePath, content, "utf-8");
+    return { status: "success", path: filePath };
   } catch (err) {
     return { status: "error", message: err.message };
   }

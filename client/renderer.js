@@ -146,6 +146,31 @@ async function handleLoadFile() {
 }
 
 /**
+ * Handles downloading the current JSON content to a file.
+ */
+async function handleDownload() {
+  const content = jsonOutput.value;
+  
+  // Basic validation before saving
+  try {
+    JSON.parse(content);
+  } catch (e) {
+    showStatus("Cannot save: Invalid JSON.", true);
+    return;
+  }
+
+  const result = await window.api.saveFile(content);
+
+  if (result.status === "success") {
+    showStatus("File saved successfully!");
+  } else if (result.status === "error") {
+    showStatus(`Error saving file: ${result.message}`, true);
+  } else if (result.status === "cancelled") {
+    showStatus("Save cancelled.", true);
+  }
+}
+
+/**
  * Validates an IP
  * @param {string} ip - the IP address to validate
  * @returns {boolean} - Return true if valid, false if not
@@ -175,6 +200,9 @@ addIpButton.addEventListener("click", handleAddEntries);
 
 // Load JSON from file
 loadFileButton.addEventListener("click", handleLoadFile);
+
+// Download JSON to file
+downloadButton.addEventListener("click", handleDownload);
 
 // Clear the IP input field
 clearIpButton.addEventListener("click", () => {
