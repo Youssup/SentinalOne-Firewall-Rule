@@ -4,4 +4,5 @@ const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld("api", {
   openFile: () => ipcRenderer.invoke("open-file"),
   saveFile: (content) => ipcRenderer.invoke("save-file", content),
-});Í
+  pushToS1: (data) => ipcRenderer.invoke("push-to-sentinelOne", data),
+});

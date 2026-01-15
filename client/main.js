@@ -1,6 +1,8 @@
 const { app, BrowserWindow, ipcMain, dialog } = require("electron");
+const axios = require("axios");
 const path = require("node:path");
 const fs = require("node:fs");
+require('dotenv').config();
 
 const createWindow = () => {
   const win = new BrowserWindow({
@@ -75,3 +77,40 @@ ipcMain.handle("save-file", async (event, content) => {
     return { status: "error", message: err.message };
   }
 });
+
+// Push to SentinelOne handler
+ipcMain.handle(
+  "push-to-sentinelOne",
+  async (event, { consoleUrl, apiToken, rulesJson }) => {
+    const sentinelOneClient = axios.create({
+      baseURL: `https://${consoleUrl}/web/api/v2.1`,
+      headers: {
+        Authorization: `ApiToken ${apiToken}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    try {
+      const rules = JSON.parse(rulesJson);
+      let results = [];
+
+      for (const rule of rules) {
+        const payload = {
+          data: rule,
+          filter: { tenant: true },
+        };
+
+        const response = await sentinelOneClient.post(
+          "/firewall-control",
+          payload
+        );
+        results.push(response.data);
+      }
+
+      return { status: "success", count: results.length };
+    } catch (err) {
+      const errorMsg = err.response?.data?.errors?.[0]?.detail || err.message;
+      return { status: "error", message: errorMsg };
+    }
+  }
+);

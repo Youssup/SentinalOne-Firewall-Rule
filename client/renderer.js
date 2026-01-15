@@ -6,6 +6,7 @@ const clearIpButton = document.getElementById("clear-ip-button");
 const loadFileButton = document.getElementById("load-file-button");
 const downloadButton = document.getElementById("download-button");
 const statusMessage = document.getElementById("status-message");
+const pushSentinelOneButton = document.getElementById("push-sentinel-one-button");
 
 const defaultRuleTemplate = [
   {
@@ -170,6 +171,26 @@ async function handleDownload() {
   }
 }
 
+async function handlePushToSentinelOne() {
+  const content = jsonOutput.value;
+  const consoleUrl = process.env.CONSOLE_URL;
+  const apiToken = process.env.API_KEY;
+
+  showStatus("Pushing to SentinelOne...", false);
+
+  const result = await window.api.pushToSentinelOne({ 
+    consoleUrl, 
+    apiToken, 
+    rulesJson: content 
+  });
+
+  if (result.status === "success") {
+    showStatus(`Successfully pushed ${result.count} rules to SentinelOne!`);
+  } else {
+    showStatus(`SentinelOne Error: ${result.message}`, true);
+  }
+}
+
 /**
  * Validates an IP
  * @param {string} ip - the IP address to validate
@@ -208,3 +229,6 @@ downloadButton.addEventListener("click", handleDownload);
 clearIpButton.addEventListener("click", () => {
   entryInput.value = "";
 });
+
+// Push rules to SentinelOne
+pushSentinelOneButton.addEventListener("click", handlePushToSentinelOne); 
