@@ -1,12 +1,20 @@
 // Setting DOM Elements
+const toggleViewBtn = document.getElementById("toggle-view-button");
+const simpleView = document.getElementById("simple-view");
+const advancedView = document.getElementById("advanced-view");
+const viewDescription = document.getElementById("view-description");
+const simpleEntryInput = document.getElementById("simple-entry-input");
+const simplePushButton = document.getElementById("simple-push-button");
 const entryInput = document.getElementById("entry-input");
 const jsonOutput = document.getElementById("json-output");
 const addIpButton = document.getElementById("add-ip-button");
 const clearIpButton = document.getElementById("clear-ip-button");
 const loadFileButton = document.getElementById("load-file-button");
 const downloadButton = document.getElementById("download-button");
+const pushSentinelOneButton = document.getElementById(
+  "push-sentinel-one-button",
+);
 const statusMessage = document.getElementById("status-message");
-const pushSentinelOneButton = document.getElementById("push-sentinel-one-button");
 
 const defaultRuleTemplate = [
   {
@@ -17,8 +25,8 @@ const defaultRuleTemplate = [
     status: "Enabled",
     os_types: ["osx", "linux", "windows"],
     remote_hosts: [
-      { type: "addresses", values: ["192.168.1.1"] },
-      { type: "cidr", values: ["192.168.0.0/64"] },
+      { type: "addresses", values: ["0.0.0.0"] },
+      { type: "cidr", values: ["0.0.0.0/0"] },
     ],
     remote_port: [],
     local_port: [],
@@ -41,63 +49,127 @@ function initialize() {
  */
 function showStatus(message, isError = false) {
   statusMessage.textContent = message;
-  // If the message is an error, set text color to red, else green
-  statusMessage.className = isError
-    ? "h-6 text-center text-red-600 transition-opacity duration-300"
-    : "h-6 text-center text-green-600 transition-opacity duration-300";
 
+  const baseClasses =
+    "absolute bottom-2 left-0 right-0 h-6 text-center text-sm font-semibold transition-opacity duration-300 pointer-events-none";
+
+  // If the message is an error, set text color to red, else green
+  const colorClass = isError ? "text-red-600" : "text-green-600";
+
+  // Make visible
+  statusMessage.className = `${baseClasses} ${colorClass} opacity-100`;
+
+  // Fade out
   setTimeout(() => {
-    statusMessage.textContent = "";
+    statusMessage.className = `${baseClasses} ${colorClass} opacity-0`;
   }, 3000);
 }
 
 /**
- * Handles adding entries from the input to the JSON.
+ * Toggles the UI between Simple and Advanced Mode
+ */
+function handleViewToggle() {
+  const isSimpleActive = !simpleView.classList.contains("hidden");
+
+  if (isSimpleActive) {
+    simpleView.classList.add("hidden");
+    advancedView.classList.remove("hidden");
+    toggleViewBtn.textContent = "Switch to Simple Mode";
+    viewDescription.textContent =
+      "Construct and edit full JSON payload rules";
+  } else {
+    simpleView.classList.remove("hidden");
+    advancedView.classList.add("hidden");
+    toggleViewBtn.textContent = "Switch to Advanced Mode";
+    viewDescription.textContent =
+      "Enter IPs/CIDRs to block globally";
+  }
+}
+
+/**
+ * Parses input and appends it to the global blocklist
+ */
+async function handleSimplePush() {
+  if (simpleEntryInput.value.trim() === "") {
+    showStatus("No entries provided.", true);
+    return;
+  }
+
+  const validEntries = simpleEntryInput.value
+    .split("\n")
+    .map((e) => e.trim())
+    .filter((e) => e.length > 0)
+    .filter((e) => ValidateIPaddress(e) || ValidateCIDR(e));
+
+  if (validEntries.length === 0) {
+    showStatus("No valid IPs or CIDRs detected.", true);
+    return;
+  }
+
+  // Format the data structure for the api
+  const ipsToAdd = validEntries.map((entry) => ({
+    type: ValidateIPaddress(entry) ? "addresses" : "cidr",
+    value: entry,
+  }));
+
+  showStatus("Appending to Global Blocklist...");
+
+  const result = await window.api.appendToSentinelOne({ ipsToAdd });
+
+  if (result.status === "success") {
+    if (result.count === 0) {
+      showStatus("All entries were already in the blocklist.");
+    } else {
+      showStatus(`Success! Added ${result.count} new items to the blocklist.`);
+    }
+    simpleEntryInput.value = "";
+  } else {
+    showStatus(`SentinelOne Error: ${result.message}`, true);
+  }
+}
+
+/**
+ * Handles adding entries from the input to the JSON
  */
 function handleAddEntries() {
   if (entryInput.value.trim() === "") {
     showStatus("No entries to add.", true);
     return;
   }
-  // Get the entries from the input, split by new lines, and trim whitespace, filter out empty lines and invalid entries
+
   const entriesToAdd = entryInput.value
     .split("\n")
     .map((entry) => entry.trim())
     .filter((entry) => entry.length > 0)
     .filter((entry) => ValidateIPaddress(entry) || ValidateCIDR(entry));
 
-  // If there are no IPs to add, show an error and end the function
   if (entriesToAdd.length === 0) {
     showStatus("No valid entries.", true);
     return;
   }
 
   try {
-    // parse the current JSON output
     const currentRules = JSON.parse(jsonOutput.value);
-
     let duplicates = "";
     let CIDRaddedCount = 0;
     let IPaddedCount = 0;
-    for (rule of currentRules) {
+
+    for (const rule of currentRules) {
       if (!rule.remote_hosts) {
         showStatus("Invalid JSON. Missing remote_hosts", true);
         return;
       }
+
       const existingIps = new Set(
-        rule.remote_hosts.flatMap((entry) => entry.values)
+        rule.remote_hosts.flatMap((entry) => entry.values),
       );
-      console.log(existingIps);
-      for (entry of entriesToAdd) {
-        // Only add the entry if it doesn't already exist
+
+      for (const entry of entriesToAdd) {
         if (!existingIps.has(entry)) {
-          // If the entry is an IP address then add it as an address type
           if (ValidateIPaddress(entry)) {
             rule.remote_hosts.push({ type: "addresses", values: [entry] });
             IPaddedCount++;
-          }
-          // Otherwise assume it is a CIDR range and add it as a cidr type
-          else {
+          } else {
             rule.remote_hosts.push({ type: "cidr", values: [entry] });
             CIDRaddedCount++;
           }
@@ -106,33 +178,34 @@ function handleAddEntries() {
         }
       }
     }
+
     jsonOutput.value = JSON.stringify(currentRules, null, 2);
     let addedCount = (IPaddedCount + CIDRaddedCount) / currentRules.length;
+
     if (addedCount === 0) {
       showStatus(`No new entries added. All entries are duplicates.`, true);
       return;
     }
+
     showStatus(
       `Added ${addedCount} entr${addedCount === 1 ? "y" : "ies"} to ${
         currentRules.length === 1 ? "the" : "each"
-      } rule. ${duplicates ? `Duplicates ignored: ${duplicates}` : ""}`
+      } rule. ${duplicates ? `Duplicates ignored: ${duplicates}` : ""}`,
     );
   } catch (error) {
     console.log("Failed to parse JSON output:", error);
-    showStatus(error, true);
+    showStatus(error.message, true);
   }
 }
 
 /**
- * Handles loading a JSON file.
+ * Handles loading a JSON file
  */
 async function handleLoadFile() {
-  // Call the "openFile" function from preload.js
   const result = await window.api.openFile();
 
   if (result.status === "success") {
     try {
-      // Parse and set it as a JSON and load it into the JSON output
       const parsed = JSON.parse(result.content);
       jsonOutput.value = JSON.stringify(parsed, null, 2);
       showStatus(`File loaded successfully!`);
@@ -141,18 +214,15 @@ async function handleLoadFile() {
     }
   } else if (result.status === "error") {
     showStatus(`Error opening file: ${result.message}`, true);
-  } else if (result.status === "cancelled") {
-    showStatus("Open cancelled.", true);
   }
 }
 
 /**
- * Handles downloading the current JSON content to a file.
+ * Handles downloading the current JSON content to a file
  */
 async function handleDownload() {
   const content = jsonOutput.value;
-  
-  // Basic validation before saving
+
   try {
     JSON.parse(content);
   } catch (e) {
@@ -166,22 +236,18 @@ async function handleDownload() {
     showStatus("File saved successfully!");
   } else if (result.status === "error") {
     showStatus(`Error saving file: ${result.message}`, true);
-  } else if (result.status === "cancelled") {
-    showStatus("Save cancelled.", true);
   }
 }
 
+/**
+ * Submits the JSON payload to SentinelOne
+ */
 async function handlePushToSentinelOne() {
   const content = jsonOutput.value;
-  const consoleUrl = process.env.CONSOLE_URL;
-  const apiToken = process.env.API_KEY;
+  showStatus("Pushing to SentinelOne...");
 
-  showStatus("Pushing to SentinelOne...", false);
-
-  const result = await window.api.pushToSentinelOne({ 
-    consoleUrl, 
-    apiToken, 
-    rulesJson: content 
+  const result = await window.api.pushToSentinelOne({
+    rulesJson: content,
   });
 
   if (result.status === "success") {
@@ -198,7 +264,7 @@ async function handlePushToSentinelOne() {
  */
 function ValidateIPaddress(ip) {
   return /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(
-    ip
+    ip,
   );
 }
 
@@ -209,26 +275,18 @@ function ValidateIPaddress(ip) {
  */
 function ValidateCIDR(cidr) {
   return /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/(3[0-2]|[12]?[0-9])$/.test(
-    cidr
+    cidr,
   );
 }
-
 // Initialize the JSON output to the default rule template on page load
 document.addEventListener("DOMContentLoaded", initialize);
 
-// Add IPs to JSON output
+toggleViewBtn.addEventListener("click", handleViewToggle);
+simplePushButton.addEventListener("click", handleSimplePush);
 addIpButton.addEventListener("click", handleAddEntries);
-
-// Load JSON from file
 loadFileButton.addEventListener("click", handleLoadFile);
-
-// Download JSON to file
 downloadButton.addEventListener("click", handleDownload);
-
-// Clear the IP input field
 clearIpButton.addEventListener("click", () => {
   entryInput.value = "";
 });
-
-// Push rules to SentinelOne
-pushSentinelOneButton.addEventListener("click", handlePushToSentinelOne); 
+pushSentinelOneButton.addEventListener("click", handlePushToSentinelOne);

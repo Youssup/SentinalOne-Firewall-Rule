@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SentinalOne Firewall Rule Manager</title>
+    <title>SentinelOne Firewall Rule Manager</title>
     <script src="tailwind.js"></script>
     <script>
       tailwind.config = {
@@ -29,100 +29,147 @@
   <body
     class="bg-light-bg text-light-text h-screen w-screen flex items-center justify-center p-4"
   >
-    <!-- Card -->
     <div
-      class="mx-auto bg-light-card rounded-2xl shadow-2xl p-6 md:p-8 flex flex-col h-full md:h-auto max-h-[95vh]"
+      class="mx-auto bg-light-card rounded-2xl shadow-2xl p-6 md:p-8 flex flex-col w-full max-w-5xl min-h-[700px] max-h-[95vh] relative overflow-hidden"
     >
-      <!-- Header -->
-      <div class="flex-shrink-0 mb-6 text-center">
+      <div
+        class="flex-shrink-0 mb-6 text-center relative border-b border-gray-100 pb-4"
+      >
         <h1 class="text-3xl font-bold text-primary-ait-orange">
-          SentinalOne Firewall Rule Manager
+          SentinelOne Firewall Rule Manager
         </h1>
-        <p class="text-light-subtext mt-2">
-          Add IPs/CIDRs, then save the JSON file.
+        <p id="view-description" class="text-light-subtext mt-2 font-medium">
+          Enter IPs/CIDRs to block globally
         </p>
+        <button
+          id="toggle-view-button"
+          class="absolute top-0 right-0 mt-2 text-sm font-bold text-light-subtext hover:text-primary-ait-orange transition-colors duration-200"
+        >
+          Switch to Advanced Mode
+        </button>
       </div>
 
-      <!-- Main Content -->
-      <div class="flex-grow flex flex-col md:flex-row gap-6 min-h-0">
-        <!-- Left Panel: IP/Cidr Input -->
-        <div class="md:w-1/3 flex flex-col">
-          <label for="entry-input" class="text-lg font-semibold mb-2"
-            >IPs & CIDR Ranges</label
-          >
-          <p class="text-sm text-light-subtext mb-2">
-            Enter one per line. Duplicates will be ignored. Will not check for
-            valid IPs or CIDR ranges.
+      <div
+        id="simple-view"
+        class="flex-grow flex flex-col min-h-0 animate-fade-in"
+      >
+        <div class="flex-grow flex flex-col min-h-0 mb-4">
+          <div class="flex justify-between items-end mb-2">
+            <label
+              for="simple-entry-input"
+              class="text-lg font-bold text-gray-800"
+              >IPs & CIDR Ranges</label
+            >
+          </div>
+          <p class="text-sm text-light-subtext mb-3">
+            Enter one per line. Duplicates will be ignored. Invalid entries are
+            filtered automatically.
           </p>
           <textarea
-            id="entry-input"
+            id="simple-entry-input"
             placeholder="e.g., 192.168.1.1&#10;62.224.0.0/16"
-            class="flex-grow bg-white border border-gray-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-ait-orange resize-none"
+            class="flex-grow w-full bg-white border-2 border-gray-200 rounded-xl p-4 text-gray-900 focus:outline-none focus:border-primary-ait-orange focus:ring-0 resize-none font-mono text-sm leading-relaxed shadow-inner"
           ></textarea>
-          <!-- Left Panel: Action Buttons -->
-          <div class="flex gap-4 mt-4">
-            <button
-              id="add-ip-button"
-              class="w-full bg-primary-ait-orange hover:bg-primary-ait-orange-dark text-white font-bold py-2 px-4 rounded-lg transition duration-300 shadow-lg"
+        </div>
+
+        <div class="flex-shrink-0 flex justify-between items-center mt-2">
+          <p class="text-sm text-light-subtext">
+            This will add the IPs/CIDRs to the global block list.
+          </p>
+          <button
+            id="simple-push-button"
+            class="bg-primary-ait-orange hover:bg-primary-ait-orange-dark text-white font-bold py-2 px-6 rounded-lg transition duration-300 shadow-md flex items-center gap-2"
+          >
+            Push to SentinelOne
+          </button>
+        </div>
+      </div>
+
+      <div
+        id="advanced-view"
+        class="hidden flex-grow flex flex-col min-h-0 animate-fade-in"
+      >
+        <div class="flex-grow flex flex-col md:flex-row gap-6 min-h-0">
+          <div class="md:w-1/3 flex flex-col">
+            <label
+              for="entry-input"
+              class="text-lg font-bold text-gray-800 mb-2"
+              >IPs & CIDR Ranges</label
             >
-              Add to Rules &rarr;
-            </button>
-            <button
-              id="clear-ip-button"
-              class="w-1/3 bg-gray-200 hover:bg-gray-300 text-light-text font-bold py-2 px-4 rounded-lg transition duration-300"
+            <p class="text-sm text-light-subtext mb-3">
+              Enter one per line. Duplicates will be ignored. Invalid entries are filtered automatically. Will append to existing JSON structure.
+            </p>
+            <textarea
+              id="entry-input"
+              placeholder="e.g., 192.168.1.1&#10;62.224.0.0/16"
+              class="flex-grow bg-white border-2 border-gray-200 rounded-xl p-3 text-gray-900 focus:outline-none focus:border-primary-ait-orange focus:ring-0 resize-none font-mono text-sm leading-relaxed shadow-inner"
+            ></textarea>
+
+            <div class="flex gap-3 mt-4">
+              <button
+                id="add-ip-button"
+                class="w-2/3 bg-primary-ait-orange hover:bg-primary-ait-orange-dark text-white font-bold py-2 px-4 rounded-lg transition duration-300 shadow-md"
+              >
+                Add to JSON
+              </button>
+              <button
+                id="clear-ip-button"
+                class="w-1/3 bg-gray-200 hover:bg-gray-300 text-light-text font-bold py-2 px-4 rounded-lg transition duration-300"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <div class="md:w-2/3 flex flex-col">
+            <label
+              for="json-output"
+              class="text-lg font-bold text-gray-800 mb-2"
+              >Firewall Rule JSON</label
             >
-              Clear
-            </button>
+            <p class="text-sm text-light-subtext mb-3">
+              The final JSON can be edited here before saving.
+            </p>
+            <textarea
+              id="json-output"
+              class="flex-grow border-2 rounded-xl p-4 font-mono text-sm focus:outline-none focus:border-primary-ait-orange focus:ring-0 resize-none shadow-inner"
+            ></textarea>
           </div>
         </div>
 
-        <!-- Right Panel: JSON Output -->
-        <div class="md:w-2/3 flex flex-col">
-          <label for="json-output" class="text-lg font-semibold mb-2"
-            >Firewall Rule JSON</label
-          >
-          <p class="text-sm text-light-subtext mb-2">
-            The final JSON can be edited here before saving.
-          </p>
-          <textarea
-            id="json-output"
-            class="flex-grow bg-white border border-gray-300 rounded-lg p-3 font-mono text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-ait-orange resize-none"
-          ></textarea>
-        </div>
-      </div>
-
-      <!-- Footer: Action Buttons -->
-      <div
-        class="flex-shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4 mt-6"
-      >
-        <div class="flex gap-4">
+        <div
+          class="flex-shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t border-gray-100"
+        >
           <button
             id="load-file-button"
-            class="bg-gray-200 hover:bg-gray-300 text-light-text font-bold py-2 px-4 rounded-lg transition duration-300"
+            class="bg-gray-200 hover:bg-gray-300 text-light-text font-bold py-2 px-6 rounded-lg transition duration-300"
           >
             Load from File
           </button>
-        </div>
-        <!-- Status Message Area -->
-        <div
-          id="status-message"
-          class="h-6 text-center text-green-ait-orange-dark transition-opacity duration-300"
-        ></div>
 
-        <button
-          id="download-button"
-          class="bg-gray-200 hover:bg-gray-300 text-light-text font-bold py-2 px-4 rounded-lg transition duration-300"
-        >
-          Download JSON File
-        </button>
-        <button
-          id="push-sentinel-one-button"
-          class="bg-primary-ait-orange hover:bg-primary-ait-orange-dark text-white font-bold py-2 px-6 rounded-lg transition duration-300 shadow-lg"
-        >
-          Push to SentinelOne
-        </button>
+          <div class="flex gap-3">
+            <button
+              id="download-button"
+              class="bg-gray-200 hover:bg-gray-300 text-light-text font-bold py-2 px-6 rounded-lg transition duration-300"
+            >
+              Download JSON
+            </button>
+            <button
+              id="push-sentinel-one-button"
+              class="bg-primary-ait-orange hover:bg-primary-ait-orange-dark text-white font-bold py-2 px-6 rounded-lg transition duration-300 shadow-md"
+            >
+              Push to SentinelOne
+            </button>
+          </div>
+        </div>
       </div>
+
+      <div
+        id="status-message"
+        class="absolute bottom-2 left-0 right-0 h-6 text-center text-sm font-semibold text-green-600 transition-opacity duration-300 opacity-0 pointer-events-none"
+      ></div>
     </div>
+
     <script src="./renderer.js" defer></script>
   </body>
 </html>
