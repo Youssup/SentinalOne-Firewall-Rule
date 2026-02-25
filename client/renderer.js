@@ -23,13 +23,13 @@ const defaultRuleTemplate = [
     direction: "inbound",
     protocol: "UDP",
     status: "Enabled",
-    os_types: ["osx", "linux", "windows"],
-    remote_hosts: [
+    osTypes: ["macos", "linux", "windows"],
+    remoteHosts: [
       { type: "addresses", values: ["0.0.0.0"] },
       { type: "cidr", values: ["0.0.0.0/0"] },
     ],
-    remote_port: [],
-    local_port: [],
+    remotePort: [],
+    localPort: [],
     application: [],
     service: null,
   },
@@ -62,7 +62,7 @@ function showStatus(message, isError = false) {
   // Fade out
   setTimeout(() => {
     statusMessage.className = `${baseClasses} ${colorClass} opacity-0`;
-  }, 3000);
+  }, 20000);
 }
 
 /**
@@ -75,14 +75,12 @@ function handleViewToggle() {
     simpleView.classList.add("hidden");
     advancedView.classList.remove("hidden");
     toggleViewBtn.textContent = "Switch to Simple Mode";
-    viewDescription.textContent =
-      "Construct and edit full JSON payload rules";
+    viewDescription.textContent = "Construct and edit full JSON payload rules";
   } else {
     simpleView.classList.remove("hidden");
     advancedView.classList.add("hidden");
     toggleViewBtn.textContent = "Switch to Advanced Mode";
-    viewDescription.textContent =
-      "Enter IPs/CIDRs to block globally";
+    viewDescription.textContent = "Enter IPs/CIDRs to block globally";
   }
 }
 
@@ -155,22 +153,22 @@ function handleAddEntries() {
     let IPaddedCount = 0;
 
     for (const rule of currentRules) {
-      if (!rule.remote_hosts) {
-        showStatus("Invalid JSON. Missing remote_hosts", true);
+      if (!rule.remoteHosts) {
+        showStatus("Invalid JSON. Missing remoteHosts", true);
         return;
       }
 
       const existingIps = new Set(
-        rule.remote_hosts.flatMap((entry) => entry.values),
+        rule.remoteHosts.flatMap((entry) => entry.values),
       );
 
       for (const entry of entriesToAdd) {
         if (!existingIps.has(entry)) {
           if (ValidateIPaddress(entry)) {
-            rule.remote_hosts.push({ type: "addresses", values: [entry] });
+            rule.remoteHosts.push({ type: "addresses", values: [entry] });
             IPaddedCount++;
           } else {
-            rule.remote_hosts.push({ type: "cidr", values: [entry] });
+            rule.remoteHosts.push({ type: "cidr", values: [entry] });
             CIDRaddedCount++;
           }
         } else {

@@ -87,7 +87,7 @@ ipcMain.handle("append-to-sentinelOne", async (event, { ipsToAdd }) => {
   }
 
   const s1 = axios.create({
-    baseURL: `https://${consoleUrl}/web/api/v2.1`,
+    baseURL: `${consoleUrl}/web/api/v2.1`,
     headers: {
       Authorization: `ApiToken ${apiToken}`,
       "Content-Type": "application/json",
@@ -108,7 +108,9 @@ ipcMain.handle("append-to-sentinelOne", async (event, { ipsToAdd }) => {
       // Rule exists so update it
       const rule = existingRules[0];
       const ruleId = rule.id;
-      const existingHosts = rule.remote_hosts || [];
+
+      // Handle both camelCase and snake_case just in case SentinelOne returns old format
+      const existingHosts = rule.remoteHosts || rule.remote_hosts || [];
       const existingValues = new Set(existingHosts.flatMap((h) => h.values));
       let addedCount = 0;
 
@@ -128,7 +130,9 @@ ipcMain.handle("append-to-sentinelOne", async (event, { ipsToAdd }) => {
         };
       }
 
-      rule.remote_hosts = existingHosts;
+      // Assign to the correct camelCase key
+      rule.remoteHosts = existingHosts;
+      delete rule.remote_hosts; // Clean up old key if it existed
 
       // Push updated rule
       await s1.put(`/firewall-control/${ruleId}`, {
@@ -138,14 +142,13 @@ ipcMain.handle("append-to-sentinelOne", async (event, { ipsToAdd }) => {
 
       return { status: "success", count: addedCount, action: "updated" };
     } else {
-      // Rule does not exist so create it
       const newRule = {
         name: ruleName,
         action: "Block",
-        direction: "both",
+        direction: "inbound",
         status: "Enabled",
-        os_types: ["windows", "linux", "osx"],
-        remote_hosts: ipsToAdd.map((ip) => ({
+        osTypes: ["linux", "macos", "windows"],
+        remoteHosts: ipsToAdd.map((ip) => ({
           type: ip.type,
           values: [ip.value],
         })),
